@@ -11,7 +11,7 @@ use \JsonSerializable;
 
 class Item implements ArrayAccess, Serializable, JsonSerializable
 {
-	static private $attributes = array();
+	static private $types = array();
 	static private $nullTypeId = 0;
 
 	private $data;
@@ -41,13 +41,13 @@ class Item implements ArrayAccess, Serializable, JsonSerializable
 	{
 		$item = new Item($type);
 
-		if (!isset(self::$attributes[$type])) {
-			self::$attributes[$type] = array();
+		if (!isset(self::$types[$type]['attributes'])) {
+			self::$types[$type]['attributes'] = array();
 		}
 
-		self::$attributes[$type] =
+		self::$types[$type]['attributes'] =
 			Arrays::mergeDictionaries(
-				self::$attributes[$type],
+				self::$types[$type]['attributes'],
 				array_flip(array_keys($data)),
 				$updatedKeys
 			);
@@ -73,13 +73,13 @@ class Item implements ArrayAccess, Serializable, JsonSerializable
 	{
 		$item = new Item($type);
 
-		if (!isset(self::$attributes[$type])) {
-			self::$attributes[$type] = array();
+		if (!isset(self::$types[$type]['attributes'])) {
+			self::$types[$type]['attributes'] = array();
 		}
 
-		self::$attributes[$type] =
+		self::$types[$type]['attributes'] =
 			Arrays::mergeDictionaries(
-				self::$attributes[$type],
+				self::$types[$type]['attributes'],
 				$index,
 				$updatedKeys
 			);
@@ -103,10 +103,10 @@ class Item implements ArrayAccess, Serializable, JsonSerializable
 	 * 
 	 * @return Item Created item.
 	 */
-	static public function fromRawData($type, &$data)
+	static public function fromRawData($type, $data)
 	{
 		$item = new Item($type);
-		$item->data = &$data;
+		$item->data = $data;
 
 		return $item; 
 	}
@@ -121,8 +121,8 @@ class Item implements ArrayAccess, Serializable, JsonSerializable
 	 */
 	static public function getAttributesOfType($type)
 	{
-		if (isset(self::$attributes[$type])) {
-			return array_keys(self::$attributes[$type]);
+		if (isset(self::$types[$type]['attributes'])) {
+			return array_keys(self::$types[$type]['attributes']);
 		}
 		return array();
 	}
@@ -137,19 +137,19 @@ class Item implements ArrayAccess, Serializable, JsonSerializable
 	 */
 	static public function getFieldsIndexOfType($type)
 	{
-		if (isset(self::$attributes[$type])) {
-			return self::$attributes[$type];
+		if (isset(self::$types[$type]['attributes'])) {
+			return self::$types[$type]['attributes'];
 		}
 		return array();
 	}
 
 	static public function addFieldsToTypeIndex($type, $new_fields)
 	{
-		if (!isset(self::$attributes[$type])) {
-			self::$attributes[$type] = array();
+		if (!isset(self::$types[$type]['attributes'])) {
+			self::$types[$type]['attributes'] = array();
 		}
-		self::$attributes[$type] = Arrays::mergeDictionaries(
-				self::$attributes[$type],
+		self::$types[$type]['attributes'] = Arrays::mergeDictionaries(
+				self::$types[$type]['attributes'],
 				$new_fields,
 				$updatedKeys
 			);
@@ -166,13 +166,13 @@ class Item implements ArrayAccess, Serializable, JsonSerializable
 	 */
 	static public function getAttributeIndexByType($type, $name, $autocreate = false)
 	{
-		if (!isset(self::$attributes[$type])) {
+		if (!isset(self::$types[$type]['attributes'])) {
 			if (!$autocreate) {
 				return null;
 			}
-			self::$attributes[$type] = array();
+			self::$types[$type]['attributes'] = array();
 		}
-		$attrIndex = &self::$attributes[$type];
+		$attrIndex = &self::$types[$type]['attributes'];
 
 		if (!isset($attrIndex[$name])) {
 			if (!$autocreate) {
@@ -180,7 +180,7 @@ class Item implements ArrayAccess, Serializable, JsonSerializable
 			}
 			$attrIndex[$name] = empty($attrIndex) ? 0 : max($attrIndex) + 1;
 		}
-		return self::$attributes[$type][$name];
+		return self::$types[$type]['attributes'][$name];
 	}
 
 	/**
@@ -196,11 +196,11 @@ class Item implements ArrayAccess, Serializable, JsonSerializable
 	static public function setAttributeAlias($type, $name, $alias, $overwrite = false)
 	{
 		$index = self::getAttributeIndexByType($type, $name);
-		if (is_null($index) || (isset(self::$attributes[$type][$alias]) && !$overwrite)) {
+		if (is_null($index) || (isset(self::$types[$type]['attributes'][$alias]) && !$overwrite)) {
 			return false;
 		}
 
-		self::$attributes[$type][$alias] = $index;
+		self::$types[$type]['attributes'][$alias] = $index;
 		return $index;
 	}
 	/**
@@ -400,7 +400,7 @@ class Item implements ArrayAccess, Serializable, JsonSerializable
 	{
 		return array_keys(
 				array_intersect(
-					self::$attributes[$this->type],
+					self::$types[$this->type]['attributes'],
 					array_keys($this->data)
 				)
 			);

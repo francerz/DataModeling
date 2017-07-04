@@ -192,6 +192,8 @@ class ItemTest extends TestCase
 		$unserialized = unserialize($serializedItem);
 
 		$this->assertEquals($value, $unserialized->$attribute);
+
+		return $unserialized;
 	}
 
 	/**
@@ -224,5 +226,20 @@ class ItemTest extends TestCase
 		$this->assertEquals($value, $item->$name);
 		// Testing ArrayAccess::offsetGet
 		$this->assertEquals($value, $item[$name]);
+	}
+
+	/**
+	 * @test
+	 * @depends testCreateFromData
+	 */
+	public function testCloning($item)
+	{
+		$copy = clone $item;
+
+		$this->assertEquals($copy, $item);
+
+		$copy->newField = 'new Field';
+
+		$this->assertNotEquals($copy, $item);
 	}
 }

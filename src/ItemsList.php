@@ -23,7 +23,14 @@ class ItemsList extends Item implements
 	{
 		parent::__construct($type);
 		$this->items = array();
-		$this->parsed = array();
+	}
+
+	public function __set($name, $value)
+	{
+		if ($name === 'items') {
+			trigger_error("Cannot set attribute name items on ".__CLASS__, E_USER_ERROR);
+		}
+		parent::__set($name, $value);
 	}
 
 	/**
@@ -46,25 +53,24 @@ class ItemsList extends Item implements
 			return null;
 		}
 		if (is_int($offset)) {
-
-			// Checks if item is already parsed and parses it if not.
-			if (!isset($this->parsed[$offset])) {
-
-				// Parsing the row to object and save it to quick access
-				// and processing time saving :)
-				$this->parseItemAt($offset);
-			}
-			return $this->parsed[$offset];
+			$this->coerceType($offset);
+			return $this->items[$offset];
 		}
 		return parent::offsetGet($offset);
 	}
 
-	private function parseItemAt($offset)
+	private function coerceType($offset)
 	{
-		$this->parsed[$offset] = Item::fromRawData(
+		if ($this->items[$offset] instanceof Item) {
+			return $this->items[$offset];
+		}
+
+		$this->items[$offset] = Item::fromRawData(
 				$this->getType(),
 				$this->items[$offset]
 			);
+
+		return $this->items[$offset];
 	}
 
 	/**
@@ -93,8 +99,7 @@ class ItemsList extends Item implements
 				E_USER_ERROR
 			);
 		} elseif (is_integer($offset)) {
-			$this->items[$offset] = &$value->getRawData();
-			$this->parsed[$offset] = $value;
+			$this->items[$offset] = $value;
 			return;
 		} else {
 			parent::offsetSet($offset, $value);
@@ -125,11 +130,9 @@ class ItemsList extends Item implements
 	 */
 	public function current()
 	{
-		$key = $this->key();
-		if (!isset($this->parsed[$key])) {
-			$this->parseItemAt($key);
-		}
-		return $this->parsed[$key];
+		$key = key($this->items);
+		$this->coerceType($key);
+		return current($this->items);
 	}
 
 	/**
@@ -190,6 +193,11 @@ class ItemsList extends Item implements
 		if (empty($this->items)) {
 			return null;
 		}
+
+		end($this->items);
+		$key = key($this->items);
+		$this->coerceType($key);
+
 		return array_pop($this->items);
 	}
 
@@ -201,10 +209,11 @@ class ItemsList extends Item implements
 	public function serialize()
 	{
 		return serialize([
-			'items' => $this->items,
+			'items' => $this->itemsToArray(),
 			'@parent' => parent::serialize()
 		]);
 	}
+
 	/**
 	 * Parses a serialized string to an object
 	 * 
@@ -214,7 +223,7 @@ class ItemsList extends Item implements
 	{
 		$data = unserialize($serialized);
 
-		$this->items = $data['items'];
+		$this->addItems($data['items']);
 		parent::unserialize($data['@parent']);
 	}
 
@@ -228,12 +237,11 @@ class ItemsList extends Item implements
 	 * given column, null will be put instead.
 	 */
 	public function getColumnValues($columnName)
-	{
-		$index = $this->getAttributeIndex($columnName);
-		
+	{		
 		$column = array();
 		foreach ($this->items as $key => $item) {
-			$column[$key] = isset($item[$index]) ? $item[$index] : null;
+			$this->coerceType($key);
+			$column[$key] = $item->{$columnName};
 		}
 		return $column;
 	}
@@ -259,19 +267,20 @@ class ItemsList extends Item implements
 	 */
 	public function itemsToArray($attributesList = array())
 	{
+		$items = array();
 		if (empty($attributesList)) {
-			$items = array();
 			foreach ($this as $key => $item) {
+				$this->coerceType($key);
 				$items[$key] = $item->dataToArray();
 			}
 			return $items;
 		} else {
-			$items = array();
 			foreach ($this as $key => $item) {
+				$this->coerceType($key);
 				$items[$key] = $item->dataToArray($attributesList);
 			}
-			return $items;
 		}
+		return $items;
 	}
 
 	/**
@@ -302,18 +311,28 @@ class ItemsList extends Item implements
 	 */
 	static public function fromData($type, $data)
 	{
-		$keys = array_keys(call_user_func_array('array_merge',$data));
-
-		$updatedKeys = static::addFieldsToTypeIndex($type, array_flip($keys));
-
 		$list = new ItemsList($type);
+
+		$list->addItems($data);
+
+		return $list;
+	}
+
+	private function addItems($data)
+	{
+		$keys = array_keys(call_user_func_array('array_merge', $data));
+
+		$updatedKeys = static::addFieldsToTypeIndex($this->getType(), array_flip($keys));
 
 		foreach ($data as $key => $item) {
 			foreach ($item as $field => $value) {
-				$list->items[$key][$updatedKeys[$field]] = $value;
+				$this->items[$key][$updatedKeys[$field]] = $value;
 			}
 		}
+	}
 
-		return $list;
+	public function __clone()
+	{
+		$this->items = $this->items;
 	}
 }

@@ -241,6 +241,8 @@ class ItemsListTest extends TestCase
 	 */
 	public function testUpdatingItemAndArray($list)
 	{
+		$list = clone $list;
+
 		$item = $list[1];
 
 		$column = $list->getColumnValues('charlie');
@@ -264,5 +266,67 @@ class ItemsListTest extends TestCase
 
 		$column = $list->getColumnValues('newAttribute');
 		$this->assertEquals('4321',$column[3]);
+	}
+
+	/**
+	 * @test
+	 * @depends  testMatrixParsing
+	 */
+	public function testSerializing($list)
+	{
+		$serialized = serialize($list);
+
+		return $serialized;
+	}
+
+	/**
+	 * @test
+	 * @depends testSerializing
+	 */
+	public function testUnserializing($serializedList)
+	{
+		$list = unserialize($serializedList);
+
+		$this->assertEquals(1,$list[0]->alfa);
+		$this->assertEquals(2,$list[0]['bravo']);
+		$this->assertEquals(3,$list[0]->charlie);
+
+
+		$this->assertEquals(4,$list[1]->alfa);
+		$this->assertEquals(5,$list[1]->bravo);
+		$this->assertEquals(6,$list[1]->delta);
+
+		$item2 = $list[2];
+		$this->assertNull($item2->alfa);
+		$this->assertEquals(7, $item2->bravo);
+		$this->assertEquals(8, $item2->charlie);
+
+		$this->assertCount(3, $list);
+	}
+
+	/**
+	 * @test
+	 * @depends  testMatrixParsing
+	 */
+	public function testCloning($list)
+	{
+		$copy = clone $list;
+
+		$this->assertEquals($copy, $list);
+
+		$copy[] = new Item('matrixed');
+
+		$this->assertNotEquals($copy, $list);
+
+		$item0 = $list[0];
+		$copy0 = $copy[0];
+
+		$this->assertEquals($copy0, $item0);
+
+		$copy0 = clone $item0;
+		$copy0->alfa = "New Value";
+		$item0->alfa = "Another Thing";
+
+		$this->assertNotEquals($copy0, $item0);
 	}
 }
