@@ -9,7 +9,7 @@ use \Iterator;
 use \Countable;
 use \InvalidArgumentException;
 
-class ItemsList extends Item implements
+class Collection extends Item implements
 	ArrayAccess,
 	Serializable,
 	JsonSerializable,
@@ -28,7 +28,7 @@ class ItemsList extends Item implements
 	public function __set($name, $value)
 	{
 		if ($name === 'items') {
-			trigger_error("Cannot set attribute name items on ".__CLASS__, E_USER_ERROR);
+			trigger_error("Cannot set field name '{$name}' on ".__CLASS__, E_USER_ERROR);
 		}
 		parent::__set($name, $value);
 	}
@@ -247,28 +247,28 @@ class ItemsList extends Item implements
 	}
 
 	/**
-	 * [setDefaultJsonAttributes description]
+	 * [setDefaultJsonFields description]
 	 * 
-	 * @param string[] $attributes List of attributes names to be included on
+	 * @param string[] $fields List of fields names to be included on
 	 * resulting JSON.
 	 */
-	public function setDefaultJsonAttributes($attributes)
+	public function setDefaultJsonFields($fields)
 	{
-		$this->defaultJsonAttributes = $attributes;
+		$this->defaultJsonFields = $fields;
 	}
 
 	/**
 	 * [itemsToArray description]
 	 * 
-	 * @param  string[]  $attributesList List of attributes that MAY be included
+	 * @param  string[]  $fieldsList List of fields that MAY be included
 	 * for each item on the list.
 	 * 
 	 * @return array Items list on array data structure.
 	 */
-	public function itemsToArray($attributesList = array())
+	public function itemsToArray($fieldsList = array())
 	{
 		$items = array();
-		if (empty($attributesList)) {
+		if (empty($fieldsList)) {
 			foreach ($this as $key => $item) {
 				$this->coerceType($key);
 				$items[$key] = $item->dataToArray();
@@ -277,7 +277,7 @@ class ItemsList extends Item implements
 		} else {
 			foreach ($this as $key => $item) {
 				$this->coerceType($key);
-				$items[$key] = $item->dataToArray($attributesList);
+				$items[$key] = $item->dataToArray($fieldsList);
 			}
 		}
 		return $items;
@@ -286,32 +286,32 @@ class ItemsList extends Item implements
 	/**
 	 * Especifies the data that should serialize for JSON formatting.
 	 * 
-	 * @return array Contains every attribute and items.
+	 * @return array Contains every field and items.
 	 */
 	public function jsonSerialize()
 	{
 		$json = parent::jsonSerialize();
 
-		if (empty($this->defaultJsonAttributes)) {
+		if (empty($this->defaultJsonFields)) {
 			$json['items'] = $this->itemsToArray();
 		} else {
-			$json['items'] = $this->itemsToArray($this->defaultJsonAttributes);
+			$json['items'] = $this->itemsToArray($this->defaultJsonFields);
 		}
 
 		return $json;
 	}
 
 	/**
-	 * Creates an ItemsList from a given type and data matrix
+	 * Creates an Collection from a given type and data matrix
 	 * 
-	 * @param  string $type Type of the ItemsList
+	 * @param  string $type Type of the Collection
 	 * @param  matrix $data Matrix that contains rows of data
 	 * 
-	 * @return ItemsList Created list
+	 * @return Collection Created list
 	 */
 	static public function fromData($type, $data)
 	{
-		$list = new ItemsList($type);
+		$list = new Collection($type);
 
 		$list->addItems($data);
 
@@ -322,7 +322,7 @@ class ItemsList extends Item implements
 	{
 		$keys = array_keys(call_user_func_array('array_merge', $data));
 
-		$updatedKeys = static::addFieldsToTypeIndex($this->getType(), array_flip($keys));
+		$updatedKeys = static::addFieldsToIndexOfType($this->getType(), array_flip($keys));
 
 		foreach ($data as $key => $item) {
 			foreach ($item as $field => $value) {
@@ -333,6 +333,6 @@ class ItemsList extends Item implements
 
 	public function __clone()
 	{
-		$this->items = $this->items;
+		// $this->items = $this->items;
 	}
 }

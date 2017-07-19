@@ -29,11 +29,12 @@ class Item implements ArrayAccess, Serializable, JsonSerializable
 		$this->data = array();
 	}
 
+	// INSTANTIATION STATIC METHODS
 	/**
-	 *	Returns a new instance that contains data as attributes.
+	 *	Returns a new instance that contains data as fields.
 	 *
 	 *	@param $type:string Type of item.
-	 *	@param $data:array Contains a pair of $name => $value for attributes.
+	 *	@param $data:array Contains a pair of $name => $value for fields.
 	 *	
 	 *	@return Item Instance that contains data.
 	 */
@@ -41,13 +42,13 @@ class Item implements ArrayAccess, Serializable, JsonSerializable
 	{
 		$item = new Item($type);
 
-		if (!isset(self::$types[$type]['attributes'])) {
-			self::$types[$type]['attributes'] = array();
+		if (!isset(self::$types[$type]['fields'])) {
+			self::$types[$type]['fields'] = array();
 		}
 
-		self::$types[$type]['attributes'] =
+		self::$types[$type]['fields'] =
 			Arrays::mergeDictionaries(
-				self::$types[$type]['attributes'],
+				self::$types[$type]['fields'],
 				array_flip(array_keys($data)),
 				$updatedKeys
 			);
@@ -60,12 +61,12 @@ class Item implements ArrayAccess, Serializable, JsonSerializable
 	}
 
 	/**
-	 *	Returns a new Instance that contains data attributes, but
-	 *	attributes are indexed on custom way.
+	 *	Returns a new Instance that contains data fields, but
+	 *	fields are indexed on custom way.
 	 *
 	 *	@param $type:string Type of item.
-	 *	@param $data:array Contains indexed attributes values.
-	 *	@param $index:array Contains a pair of $name => $index for attributes.
+	 *	@param $data:array Contains indexed fields values.
+	 *	@param $index:array Contains a pair of $name => $index for fields.
 	 *
 	 *	@return Item Instance that contains indexed data.
 	 */
@@ -73,13 +74,13 @@ class Item implements ArrayAccess, Serializable, JsonSerializable
 	{
 		$item = new Item($type);
 
-		if (!isset(self::$types[$type]['attributes'])) {
-			self::$types[$type]['attributes'] = array();
+		if (!isset(self::$types[$type]['fields'])) {
+			self::$types[$type]['fields'] = array();
 		}
 
-		self::$types[$type]['attributes'] =
+		self::$types[$type]['fields'] =
 			Arrays::mergeDictionaries(
-				self::$types[$type]['attributes'],
+				self::$types[$type]['fields'],
 				$index,
 				$updatedKeys
 			);
@@ -111,68 +112,52 @@ class Item implements ArrayAccess, Serializable, JsonSerializable
 		return $item; 
 	}
 
+	// FIELD/ATTRIBUTES INDEX STATIC METHODS
+
 	/**
-	 *	Retrieves a list of attributes names for a given type name
+	 *	Retrieves a list of fields names for a given type name
 	 *
 	 *	@param $type:string Name of type
 	 *
-	 *	@return string[] Returns a string array with the attributes name. If
+	 *	@return string[] Returns a string array with the fields name. If
 	 *	type doesn't exists an empty array will be returned.
 	 */
-	static public function getAttributesOfType($type)
+	static public function getFieldsListOfType($type)
 	{
-		if (isset(self::$types[$type]['attributes'])) {
-			return array_keys(self::$types[$type]['attributes']);
+		if (isset(self::$types[$type]['fields'])) {
+			return array_keys(self::$types[$type]['fields']);
 		}
 		return array();
 	}
 
 	/**
-	 * Returns the attributes position index for a given type.
+	 * Returns the fields position index for a given type.
 	 * 
 	 * @param  string $type Desired type index to be returned.
 	 * 
-	 * @return array Returns the attributes position index for the given type.
+	 * @return array Returns the fields position index for the given type.
 	 * If there's no index for the type, an empty array will be returned.
 	 */
 	static public function getFieldsIndexOfType($type)
 	{
-		if (isset(self::$types[$type]['attributes'])) {
-			return self::$types[$type]['attributes'];
+		if (isset(self::$types[$type]['fields'])) {
+			return self::$types[$type]['fields'];
 		}
 		return array();
-	}
-
-	static public function addFieldsToTypeIndex($type, $new_fields)
-	{
-		if (!isset(self::$types[$type]['attributes'])) {
-			self::$types[$type]['attributes'] = array();
-		}
-		self::$types[$type]['attributes'] = Arrays::mergeDictionaries(
-				self::$types[$type]['attributes'],
-				$new_fields,
-				$updatedKeys
-			);
-		return $updatedKeys;
-	}
-
-	public function getFieldsIndex()
-	{
-		return self::getFieldsIndexOfType($this->type);
 	}
 
 	/**
 	 *	
 	 */
-	static public function getAttributeIndexByType($type, $name, $autocreate = false)
+	static public function getFieldIndexOfType($type, $name, $autocreate = false)
 	{
-		if (!isset(self::$types[$type]['attributes'])) {
+		if (!isset(self::$types[$type]['fields'])) {
 			if (!$autocreate) {
 				return null;
 			}
-			self::$types[$type]['attributes'] = array();
+			self::$types[$type]['fields'] = array();
 		}
-		$attrIndex = &self::$types[$type]['attributes'];
+		$attrIndex = &self::$types[$type]['fields'];
 
 		if (!isset($attrIndex[$name])) {
 			if (!$autocreate) {
@@ -180,53 +165,63 @@ class Item implements ArrayAccess, Serializable, JsonSerializable
 			}
 			$attrIndex[$name] = empty($attrIndex) ? 0 : max($attrIndex) + 1;
 		}
-		return self::$types[$type]['attributes'][$name];
+		return self::$types[$type]['fields'][$name];
 	}
 
-	/**
-	 *	Create an alias to an existent attribute.
-	 *
-	 *	@param $type:string Type Identifier.
-	 *	@param $name:string Attribute name.
-	 *	@param $alias:string Alias to attribute.
-	 *
-	 *	@return int|false Returns the index value for created alias, or FALSE if 
-	 *	given attribute doesn't exists or alias overwrites existing.
-	 */
-	static public function setAttributeAlias($type, $name, $alias, $overwrite = false)
+	static public function addFieldsToIndexOfType($type, $new_fields)
 	{
-		$index = self::getAttributeIndexByType($type, $name);
-		if (is_null($index) || (isset(self::$types[$type]['attributes'][$alias]) && !$overwrite)) {
+		if (!isset(self::$types[$type]['fields'])) {
+			self::$types[$type]['fields'] = array();
+		}
+		self::$types[$type]['fields'] = Arrays::mergeDictionaries(
+				self::$types[$type]['fields'],
+				$new_fields,
+				$updatedKeys
+			);
+		return $updatedKeys;
+	}
+	
+	static public function addAliasToFieldOfType($type, $field, $alias)
+	{
+		if (!self::isValidFieldName($alias)) {
+			trigger_error("Invalid field name {$alias}.");
+		}
+		$index = self::getFieldIndexOfType($type, $name);
+		if (is_null($index)) {
+			trigger_error("Given name '{$field}' doesn't exists on type '{$type}'.");
 			return false;
 		}
-
-		self::$types[$type]['attributes'][$alias] = $index;
+		if (isset(self::$types[$type]['fields'][$alias])) {
+			trigger_error("Given alias '{$alias}' name already exists on type '{$type}'");
+			return false;
+		}
+		self::$types[$type]['fields'][$alias] = $index;
 		return $index;
 	}
 	/**
 	 *	
 	 */
-	protected function getAttributeIndex($name, $autocreate = false)
+	protected function getFieldIndex($name, $autocreate = false)
 	{
-		return static::getAttributeIndexByType($this->type, $name, $autocreate);
+		return static::getFieldIndexOfType($this->type, $name, $autocreate);
 	}
 
 	/**
 	 *	
 	 */
-	public function setAlias($alias, $attribute)
+	public function setAlias($alias, $field)
 	{
-		return static::setAttributeAlias($this->type, $attribute, $alias, false);
+		return static::setFieldAlias($this->type, $field, $alias, false);
 	}
 
 	/**
-	 *	Checks if given attribute name is a valid one.
+	 *	Checks if given field name is a valid one.
 	 *
 	 *	@param $name:string Name to be checked.
-	 *	@return boolean Indicate TRUE when is a valid attribute name, FALSE
+	 *	@return boolean Indicate TRUE when is a valid field name, FALSE
 	 *	otherwise.
 	 */
-	private function isValidName($name)
+	static private function isValidFieldName($name)
 	{
 		if (is_string($name) && preg_match('/^[a-zA-Z_\x7f-\xff][a-zA-Z0-9_\x7f-\xff]*$/', $name)) {
 			return true;
@@ -234,47 +229,47 @@ class Item implements ArrayAccess, Serializable, JsonSerializable
 		return false;
 	}
 	/**
-	 *	Sets an attribute value.
+	 *	Sets an field value.
 	 *
-	 *	@param $name:string Name of the attribute.
-	 *	@param $value:mixed Value of the attribute.
+	 *	@param $name:string Name of the field.
+	 *	@param $value:mixed Value of the field.
 	 */
 	public function __set($name, $value)
 	{
-		// Checks whether attribute name is numeric only and reports error.
-		if (!$this->isValidName($name)) {
+		// Checks whether field name is numeric only and reports error.
+		if (!self::isValidFieldName($name)) {
 			$name =
 				is_array($name) ? 'array' :
 				is_object($name) ? 'object' :
 				$name;
 			trigger_error(
-				"Invalid attribute name, given '{$name}'",
+				"Invalid field name, given '{$name}'",
 				E_USER_ERROR
 			);
 			return;
 		}
-		// Retrieves the attribute column index if exists, registers new if
+		// Retrieves the field column index if exists, registers new if
 		// the specified name is not registered.
-		$index = $this->getAttributeIndex($name, true);
+		$index = $this->getFieldIndex($name, true);
 
-		// Sets attribute value.
+		// Sets field value.
 		$this->data[$index] = $value;
 	}
 	/**
-	 *	Retrieves attribute value. If attribute is unset or doesn't exists
+	 *	Retrieves field value. If field is unset or doesn't exists
 	 *	function returns NULL.
 	 *
-	 *	@param $name:string Name of the attribute.
+	 *	@param $name:string Name of the field.
 	 *	
-	 *	@return mixed Attribute value or null if attribute is not set.
+	 *	@return mixed Field value or null if field is not set.
 	 */
 	public function __get($name)
 	{
-		// Retrieves the attribute column index, if attribute name does not
+		// Retrieves the field column index, if field name does not
 		// exists returns null.
-		$index = $this->getAttributeIndex($name);
+		$index = $this->getFieldIndex($name);
 
-		// Returns null if attribute does not exists or data isn't set.
+		// Returns null if field does not exists or data isn't set.
 		if (null === $index || !isset($this->data[$index])) {
 			return null;
 		}
@@ -282,16 +277,16 @@ class Item implements ArrayAccess, Serializable, JsonSerializable
 		return $this->data[$index];
 	}
 	/**
-	 *	Checks wheter the attribute contains any value set.
+	 *	Checks wheter the field contains any value set.
 	 *	
-	 *	@param $name:string Name of the attribute.
+	 *	@param $name:string Name of the field.
 	 *
 	 *	@return boolean TRUE if attibute isset, even if it is null, FALSE if 
 	 *	isn't set.
 	 */
 	public function __isset($name)
 	{
-		$index = $this->getAttributeIndex($name);
+		$index = $this->getFieldIndex($name);
 
 		if (null === $index || !isset($this->data[$index])) {
 			return false;
@@ -301,13 +296,13 @@ class Item implements ArrayAccess, Serializable, JsonSerializable
 	}
 
 	/**
-	 *	Unsets value attribute on object
+	 *	Unsets value field on object
 	 *
-	 *	@param $name:string Name of attribute to be unseted
+	 *	@param $name:string Name of field to be unseted
 	 */
 	public function __unset($name)
 	{
-		$index = $this->getAttributeIndex($name);
+		$index = $this->getFieldIndex($name);
 
 		if (null !== $index && isset($this->data[$index])) {
 			unset($this->data[$index]);
@@ -394,30 +389,30 @@ class Item implements ArrayAccess, Serializable, JsonSerializable
 	}
 
 	/**
-	 *	Retrieves a list of attributes names that exists on current Item object.
+	 *	Retrieves a list of fields names that exists on current Item object.
 	 */
-	public function getAttributesList()
+	public function getFieldsList()
 	{
 		return array_keys(
 				array_intersect(
-					self::$types[$this->type]['attributes'],
+					self::$types[$this->type]['fields'],
 					array_keys($this->data)
 				)
 			);
 	}
 
 	/**
-	 *	Converts all data attributes in the object to an associative array.
+	 *	Converts all data fields in the object to an associative array.
 	 *	Field alias will be included as independent values.
 	 */
-	public function dataToArray($attributesList = array())
+	public function dataToArray($fieldsList = array())
 	{
-		if (empty($attributesList)) {
-			$attributesList = $this->getAttributesList();
+		if (empty($fieldsList)) {
+			$fieldsList = $this->getFieldsList();
 		}
 
 		$content = array();
-		foreach ($attributesList as $field) {
+		foreach ($fieldsList as $field) {
 			$content[$field] = $this->__get($field);
 		}
 
@@ -425,26 +420,26 @@ class Item implements ArrayAccess, Serializable, JsonSerializable
 	}
 
 	/**
-	 *	Specifies default attributes that should be included when the json
+	 *	Specifies default fields that should be included when the json
 	 *	format is requested.
 	 *
-	 *	@param $attributes:array A list of attributes.
+	 *	@param $fields:array A list of fields.
 	 *
 	 */
-	public function setDefaultJsonAttributes($attributes)
+	public function setDefaultJsonFields($fields)
 	{
-		$this->defaultJsonAttributes = $attributes;
+		$this->defaultJsonFields = $fields;
 	}
 	
 	/**
-	 *	Retrieves an array with attributes and values.
+	 *	Retrieves an array with fields and values.
 	 */
 	public function jsonSerialize()
 	{
-		if (empty($this->defaultJsonAttributes)) {
+		if (empty($this->defaultJsonFields)) {
 			return $this->dataToArray();
 		} else {
-			return $this->dataToArray($this->defaultJsonAttributes);
+			return $this->dataToArray($this->defaultJsonFields);
 		}
 	}
 

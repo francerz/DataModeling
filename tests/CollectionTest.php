@@ -1,17 +1,19 @@
 <?php
 
 use Francerz\DataModeling\Item;
-use Francerz\DataModeling\ItemsList;
+use Francerz\DataModeling\Collection;
 use PHPUnit\Framework\TestCase;
 
-class ItemsListTest extends TestCase
+class CollectionTest extends TestCase
 {
 	/**
 	 *	@test
 	 */
-	public function testItemsListInstantiation()
+	public function testCollectionInstantiation()
 	{
-		$list = new ItemsList('tipoA');
+		$list = new Collection('tipoA');
+
+		$this->assertInstanceOf(Collection::class, $list);
 
 		return $list;
 	}
@@ -20,9 +22,9 @@ class ItemsListTest extends TestCase
 	 *	@test
 	 *	@expectedException PHPUnit_Framework_Error
 	 */
-	public function testBadItemsListInstantiation()
+	public function testBadCollectionInstantiation()
 	{
-		$list = new ItemsList();
+		$list = new Collection();
 	}
 
 	public function itemsProvider()
@@ -42,12 +44,13 @@ class ItemsListTest extends TestCase
 				"floatIndex"		=> [4.2, new Item('tipoA')],
 				"numericStringIndex"=> ['6', new Item('tipoA')],
 				"unmatchItemType"	=> [5, new Item('tipoB')],
+				"itemsNamedField"=>['items', new Item('tipoB')],
 			);
 	}
-	public function attributesProvider()
+	public function fieldsProvider()
 	{
 		return array(
-				['attribute', new Item("tipoC")],
+				['field', new Item("tipoC")],
 				['_nombre'	, "con cadena"],
 				['s24'		, "segundo 24"]
 			);
@@ -55,7 +58,7 @@ class ItemsListTest extends TestCase
 
 	/**
 	 *	@test
-	 *	@depends testItemsListInstantiation
+	 *	@depends testCollectionInstantiation
 	 *	@dataProvider itemsProvider
 	 */
 	public function testSettingItems($index, $valor, $list)
@@ -69,20 +72,22 @@ class ItemsListTest extends TestCase
 
 	/**
 	 *	@test
-	 *	@depends testItemsListInstantiation
+	 *	@depends testCollectionInstantiation
 	 *	@dataProvider itemsProvider
 	 *	@expectedException PHPUnit_Framework_Error
 	 */
-	public function testSettingItemsAsAttributes($index, $valor, $list)
+	public function testSettingItemsAsFields($index, $valor, $list)
 	{
 		$list = clone $list;
 
 		$list->$index = $valor;
+
+		$this->assertEquals($valor, $list->$index);
 	}
 
 	/**
 	 *	@test
-	 *	@depends testItemsListInstantiation
+	 *	@depends testCollectionInstantiation
 	 *	@dataProvider badItemsProvider
 	 *	@expectedException PHPUnit_Framework_Error
 	 */
@@ -97,10 +102,10 @@ class ItemsListTest extends TestCase
 
 	/**
 	 *	@test
-	 *	@depends testItemsListInstantiation
-	 *	@dataProvider attributesProvider
+	 *	@depends testCollectionInstantiation
+	 *	@dataProvider fieldsProvider
 	 */
-	public function testSettingAttributes($name, $value, $list)
+	public function testSettingFields($name, $value, $list)
 	{
 		$list = clone $list;
 
@@ -115,7 +120,7 @@ class ItemsListTest extends TestCase
 
 	/**
 	 *	@test
-	 *	@depends testItemsListInstantiation
+	 *	@depends testCollectionInstantiation
 	 */
 	public function testPushingContent($list)
 	{
@@ -157,10 +162,10 @@ class ItemsListTest extends TestCase
 	 */
 	public function testJsonSerializing()
 	{
-		$list = new ItemsList('tipoB');
+		$list = new Collection('tipoB');
 
-		$list->attribute1 = 'First Attribute';
-		$list->attribute2 = 'Second Attribute';
+		$list->field1 = 'First Field';
+		$list->field2 = 'Second Field';
 
 		$list[0] = new Item('tipoB');
 		$list[0]->alfa = 'a';
@@ -173,8 +178,8 @@ class ItemsListTest extends TestCase
 		$jsonString = json_encode($list->jsonSerialize());
 
 		$expectedJsonString = '{'.
-			'"attribute1":"First Attribute",'.
-			'"attribute2":"Second Attribute",'.
+			'"field1":"First Field",'.
+			'"field2":"Second Field",'.
 			'"items":['.
 				'{"alfa":"a","bravo":"b"},'.
 				'{"charlie":"c","delta":"d"}'.
@@ -195,7 +200,7 @@ class ItemsListTest extends TestCase
 				["bravo"=>7, "charlie"=>8]
 			);
 
-		$list = ItemsList::fromData("matrixed", $matrix);
+		$list = Collection::fromData("matrixed", $matrix);
 
 		$this->assertEquals(1,$list[0]->alfa);
 		$this->assertEquals(2,$list[0]['bravo']);
@@ -257,14 +262,14 @@ class ItemsListTest extends TestCase
 		$this->assertEquals($value, $column[1]);
 
 		$newItem = new Item('matrixed');
-		$newItem->newAttribute = '1234';
+		$newItem->newField = '1234';
 		$list[3] = $newItem;
-		$this->assertEquals('1234',$list[3]['newAttribute']);
+		$this->assertEquals('1234',$list[3]['newField']);
 
-		$list[3]['newAttribute'] = '4321';
-		$this->assertEquals('4321',$list[3]->newAttribute);
+		$list[3]['newField'] = '4321';
+		$this->assertEquals('4321',$list[3]->newField);
 
-		$column = $list->getColumnValues('newAttribute');
+		$column = $list->getColumnValues('newField');
 		$this->assertEquals('4321',$column[3]);
 	}
 
@@ -275,6 +280,8 @@ class ItemsListTest extends TestCase
 	public function testSerializing($list)
 	{
 		$serialized = serialize($list);
+
+		$this->assertNotNull($serialized);
 
 		return $serialized;
 	}

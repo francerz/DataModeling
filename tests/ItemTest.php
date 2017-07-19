@@ -11,6 +11,8 @@ class ItemTest extends TestCase
 	public function testItemInstantiation()
 	{
 		$item = new Item("tipoA");
+		$this->assertInstanceOf(Item::class, $item);
+
 		return $item;
 	}
 
@@ -24,9 +26,9 @@ class ItemTest extends TestCase
 	}
 
 	/**
-	 *	List of valid attribute test cases
+	 *	List of valid field test cases
 	 */
-	public function attributesProvider()
+	public function fieldsProvider()
 	{
 		return array(
 				["campoA", "valorA"],
@@ -36,9 +38,9 @@ class ItemTest extends TestCase
 	}
 
 	/**
-	 *	List of invalid attribute test cases
+	 *	List of invalid field test cases
 	 */
-	public function badAttributesProvider()
+	public function badFieldsProvider()
 	{
 		return array(
 				'arrayName'		=> [ array(), "valorArreglo"],
@@ -61,19 +63,19 @@ class ItemTest extends TestCase
 	/**
 	 *	@test
 	 *	@depends testItemInstantiation
-	 *	@dataProvider attributesProvider
+	 *	@dataProvider fieldsProvider
 	 */
-	public function testItemAttributesMagicSetGet($attribute, $value, $item)
+	public function testItemFieldsMagicSetGet($field, $value, $item)
 	{
 		$item = clone $item;
 
 		// testing magic method __set
-		$item->$attribute = $value;
+		$item->$field = $value;
 
 		// testing magic method __get
-		$this->assertEquals($value, $item->$attribute);
+		$this->assertEquals($value, $item->$field);
 		// testing ArrayAccess::offsetGet
-		$this->assertEquals($value, $item[$attribute]);
+		$this->assertEquals($value, $item[$field]);
 
 		return $item;
 	}
@@ -81,19 +83,19 @@ class ItemTest extends TestCase
 	/**
 	 *	@test
 	 *	@depends testItemInstantiation
-	 *	@dataProvider attributesProvider
+	 *	@dataProvider fieldsProvider
 	 */
-	public function testItemAttributesArraySetGet($attribute, $value, $item)
+	public function testItemFieldsArraySetGet($field, $value, $item)
 	{
 		$item = clone $item;
 
 		// testing ArrayAccess::offsetSet
-		$item[$attribute] = $value;
+		$item[$field] = $value;
 
 		// testing magic method __get
-		$this->assertEquals($value, $item->$attribute);
+		$this->assertEquals($value, $item->$field);
 		// testing ArrayAccess::offsetGet
-		$this->assertEquals($value, $item[$attribute]);
+		$this->assertEquals($value, $item[$field]);
 
 		return $item;
 	}
@@ -101,14 +103,14 @@ class ItemTest extends TestCase
 	/**
 	 *	@test
 	 *	@depends testItemInstantiation
-	 *	@dataProvider badAttributesProvider
+	 *	@dataProvider badFieldsProvider
 	 *	@expectedException PHPUnit_Framework_Error
 	 */
-	public function testItemSetBadWithMagic($attribute, $value, $item)
+	public function testItemSetBadWithMagic($field, $value, $item)
 	{
 		$item = clone $item;
 
-		$item->$attribute = $value;
+		$item->$field = $value;
 
 		return $item;
 	}
@@ -116,31 +118,31 @@ class ItemTest extends TestCase
 	/**
 	 *	@test
 	 *	@depends testItemInstantiation
-	 *	@dataProvider badAttributesProvider
+	 *	@dataProvider badFieldsProvider
 	 *	@expectedException PHPUnit_Framework_Error
-	 *	@expectedExceptionMessage Invalid attribute name
+	 *	@expectedExceptionMessage Invalid field name
 	 */
-	public function testItemSetBadWithArray($attribute, $value, $item)
+	public function testItemSetBadWithArray($field, $value, $item)
 	{
 		$item = clone $item;
 
-		$item[$attribute] = $value;
+		$item[$field] = $value;
 	}
 
 	/**
 	 *	@test
 	 *	@depends testItemInstantiation
-	 *	@dataProvider attributesProvider
+	 *	@dataProvider fieldsProvider
 	 */
-	public function testItemGetUnsetAttributes($attribute, $value, $item)
+	public function testItemGetUnsetFields($field, $value, $item)
 	{
 		$item = clone $item;
 
 		// testing with magic method __get
-		$this->assertNull($item->$attribute);
+		$this->assertNull($item->$field);
 
 		// testing with ArrayAccess:offsetGet
-		$this->assertNull($item[$attribute]);
+		$this->assertNull($item[$field]);
 	}
 
 	/**
@@ -172,26 +174,28 @@ class ItemTest extends TestCase
 	{
 		$item = clone $item;
 
-		$attributes = $this->attributesProvider();
+		$fields = $this->fieldsProvider();
 
-		foreach($attributes as $value) {
+		foreach($fields as $value) {
 			$item->$value[0] = $value[1];
 		}
 
 		$serialized = serialize($item);
+
+		$this->assertNotNull($serialized);
 
 		return $serialized;
 	}
 
 	/**
 	 *	@depends testItemSerialization
-	 *	@dataProvider attributesProvider
+	 *	@dataProvider fieldsProvider
 	 */
-	public function testItemUnserialization($attribute, $value, $serializedItem)
+	public function testItemUnserialization($field, $value, $serializedItem)
 	{
 		$unserialized = unserialize($serializedItem);
 
-		$this->assertEquals($value, $unserialized->$attribute);
+		$this->assertEquals($value, $unserialized->$field);
 
 		return $unserialized;
 	}
@@ -201,22 +205,24 @@ class ItemTest extends TestCase
 	 */
 	public function testCreateFromData()
 	{
-		$attributes = $this->attributesProvider();
+		$fields = $this->fieldsProvider();
 
 		$type = 'alpha';
 		$data = array();
-		foreach ($attributes as $value) {
+		foreach ($fields as $value) {
 			$data[$value[0]] = $value[1];
 		}
 
 		$item = Item::fromData($type, $data);
+
+		$this->assertInstanceOf(Item::class, $item);
 
 		return $item;
 	}
 	/**
 	 *	@test
 	 *	@depends testCreateFromData
-	 *	@dataProvider attributesProvider
+	 *	@dataProvider fieldsProvider
 	 */
 	public function testGettingCreatedFromData($name, $value, $item)
 	{
