@@ -10,7 +10,7 @@ class ModelDirectives
      * @param string $name
      * @return boolean
      */
-    static protected function isValidPropertyName($name)
+    static public function isValidPropertyName($name)
     {
         if (is_string($name)) {
             return preg_match('/[a-zA-Z_\x7f-\xff][a-zA-Z0-9_\x7f-\xff]*/',$name);

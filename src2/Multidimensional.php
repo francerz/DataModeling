@@ -1,7 +1,12 @@
 <?php
 namespace Francerz\PhpModel;
 
-class Multidimensional
+use ArrayAccess;
+use Countable;
+use InvalidArgumentException;
+use JsonSerializable;
+
+class Multidimensional implements ArrayAccess, JsonSerializable
 {
     private $data;
     private $dims;
@@ -37,7 +42,7 @@ class Multidimensional
         return $values;
     }
 
-    public function getCell($dValue, $coords, callable $callback, $column = null)
+    public function getCell($dValue, $coords, callable $callback, $column = null, $args = array())
     {
         if (empty($coords)) {
             if (is_string($callback) && strcasecmp($callback,'count') === 0) {
@@ -53,12 +58,28 @@ class Multidimensional
             $rows = ArrayHelper::filterKeys($this->data, $indexes);
         }
 
+        
         if (is_null($column)) {
-            return $callback($rows);
+            return call_user_func_array(
+                $callback,
+                array_merge(
+                    [$rows],
+                    $args
+                ));
         } elseif ($rows instanceof CollectionInterface) {
-            return $callback($rows->getColumnValues($column));
+            return call_user_func_array(
+                $callback,
+                array_merge(
+                    [$rows->getColumnValues($column)],
+                    $args
+                ));
         } else {
-            return $callback(ArrayHelper::getColumn($rows, $column));
+            return call_user_func_array(
+                $callback,
+                array_merge(
+                    [ArrayHelper::getColumn($rows, $column)],
+                    $args
+                ));
         }
 
         return $dValue;
@@ -99,5 +120,91 @@ class Multidimensional
             return $object[$props];
         }
         return array();
+    }
+
+    public function offsetExists($offset)
+    {
+
+    }
+    public function offsetGet($offset)
+    {
+        if (is_array($offset)) {
+            if (count($offset) == 0) {
+                return $this->data;
+            }
+            $indexes = $this->filterIndexesByCoordinates($offset);
+            $data = ArrayHelper::filterKeys($this->data, $indexes);
+            return new DataGroup($data);
+        } else {
+            throw new InvalidArgumentException("ERRORSISSIMO 2gUqk3983tjh");
+        }
+    }
+    public function offsetSet($offset, $value)
+    {
+
+    }
+    public function offsetUnSet($offset)
+    {
+
+    }
+    public function jsonSerialize()
+    {
+        return $this->data;
+    }
+}
+
+class DataGroup implements Countable
+{
+    private $data;
+    public function __construct(array $data = array())
+    {
+        $this->data = $data;
+    }
+    private static function filter(array $data, callable $filter = null)
+    {
+        if (is_callable($filter)) {
+            return array_filter($data, $filter, 0);
+        } else {
+            return $data;
+        }
+    }
+    public function sum(string $field, callable $filter = null)
+    {
+        $res = 0;
+        $data = static::filter($this->data, $filter);
+        foreach ($data as $d) {
+            $res += $d->{$field};
+        }
+        return $res;
+    }
+    public function first(string $field, callable $filter = null)
+    {
+        $data = static::filter($this->data, $filter);
+        if (count($data) > 0) {
+            reset($data);
+            $f = current($data);
+            if (is_object($f)) {
+                return $f->{$field};
+            }
+        }
+        return;
+    }
+    public function reduce($initial, callable $function) {
+        foreach ($this->data as $d) {
+            $initial = $function($initial, $d);
+        }
+        return $initial;
+    }
+    public function mean(string $field, callable $filter = null)
+    {
+        $sum = $this->sum($field, $filter);
+        $data = static::filter($this->data, $filter);
+        return $sum / count($data);
+    }
+    public function count() {
+        return count($this->data);
+    }
+    public function __get($name) {
+        return $this->first($name);
     }
 }

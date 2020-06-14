@@ -13,7 +13,7 @@ class Collection extends Item implements CollectionInterface
     public function __construct($content = null)
     {
         if (is_null($content)) {
-            parent::construct();
+            parent::__construct();
             $this->items = array();
         } else {
             $data = ArrayHelper::getAssociative($content);

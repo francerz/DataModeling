@@ -1,7 +1,8 @@
 {
-	"name": "Francerz/Data",
+	"name": "Francerz/PhpModel",
 	"description": "Multiporpouse data library to handle complex structures",
 	"keywords": ["data structures"],
+	"minimum-stability": "dev",
 	"authors": [
 		{
 			"name": "Francisco Cervantes",
@@ -14,7 +15,7 @@
 	},
 	"autoload": {
 		"psr-4": {
-			"Francerz\\DataModeling\\": "src"
+			"Francerz\\PhpModel\\": "src2"
 		}
 	}
 }

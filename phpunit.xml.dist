@@ -11,8 +11,11 @@
 		 stopOnFailure="false"
 		 syntaxCheck="false">
 	<testsuites>
-		<testsuite name="DataModelingTestSuite">
-			<directory suffix="Test.php">./tests</directory>
+		<!-- <testsuite name="DataModelingTestSuite">
+			<directory suffix="Test.php">./tests/datamodeling</directory>
+		</testsuite> -->
+		<testsuite name="phpmodel">
+			<directory suffix="Test.php">./tests/phpmodel</directory>
 		</testsuite>
 	</testsuites>
 </phpunit>

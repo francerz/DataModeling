@@ -1,7 +1,0 @@
-// Coloque su configuración en este archivo para sobrescribir la configuración predeterminada y de usuario.
-{
-  "phpunit.execPath": "./vendor/bin/phpunit",
-  "phpunit.args": [
-      "--configuration", "./phpunit.xml"
-  ]
-}
