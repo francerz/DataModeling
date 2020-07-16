@@ -1,5 +1,5 @@
 {
-	"name": "Francerz/PhpModel",
+	"name": "francerz/phpmodel",
 	"description": "Multiporpouse data library to handle complex structures",
 	"keywords": ["data structures"],
 	"minimum-stability": "dev",
