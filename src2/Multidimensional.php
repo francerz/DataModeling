@@ -201,6 +201,12 @@ class DataGroup implements Countable
         $data = static::filter($this->data, $filter);
         return $sum / count($data);
     }
+    public function unique(string $field, callable $filter = null)
+    {
+        $filter = static::filter($this->data, $filter);
+        $data = array_unique(array_column($filter, $field));
+        return $data;
+    }
     public function count() {
         return count($this->data);
     }
